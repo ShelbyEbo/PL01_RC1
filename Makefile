@@ -1,4 +1,3 @@
-```makefile
 SRCS = src/main.c \
        src/process.c \
        src/join.c \
