@@ -1,8 +1,14 @@
-SRCS = main.c utils.c
+SRCS = src/main.c \
+		src/process.c
+		src/join.c
+		src/bootstrap.c
+		src/leave.c
+		src/search.c
+		src/server.c
 
 OBJS = $(SRCS:.c=.o)
 
-HEADERS = header.h
+HEADERS = headers/header.h
 
 COMPILER = cc
 
