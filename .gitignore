@@ -1,3 +1,4 @@
 *.o
 ddt
 boot_server
+.vscode/*

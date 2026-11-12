@@ -80,4 +80,12 @@ int handle_new_connection(Node *node);
 int handle_socket_message(Node *node, int fd_type);
 void run_event_loop(Node *node);
 
+/* Protótipos das funções de adesão aos nós */
+void    join_empty();
+void    join_existing();
+
+/* Protótipos das funções de saída dos nós */
+void leave_alone(Node *node);
+void leave_multiple(Node *node);
+
 #endif
