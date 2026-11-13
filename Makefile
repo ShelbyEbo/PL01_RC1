@@ -30,7 +30,7 @@ bootserver: $(BOOT_SERVER)
 	$(CC) $(CFLAGS) -Iheaders -c $< -o $@
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS) src/boot_server.o
 
 fclean: clean
 	rm -f $(NAME) $(BOOT_SERVER)
