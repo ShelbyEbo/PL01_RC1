@@ -26,7 +26,7 @@ static void handle_join_cmd(Node *node, char *command)
     if (resp.is_empty)
         join_empty(node, ring_id, node_id);
     else
-        join_existing(resp, node_id);
+        join_existing(node, &resp, node_id);
 }
 
 static void handle_show_cmd(Node *node)
