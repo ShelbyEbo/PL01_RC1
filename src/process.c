@@ -81,7 +81,14 @@ void process_command(Node *node, char *command)
     else if (!strcmp(cmd, "leave"))
         handle_leave_cmd(node);
     else if (!strcmp(cmd, "search"))
-        printf("Comando search a implementar em search.c.\n");
+    {
+        int key;
+
+        if (sscanf(command, "%19s %d", cmd, &key) != 2)
+            printf("Uso: search <id>\n");
+        else
+            search_start(node, key);
+    }
     else if (!strcmp(cmd, "exit"))
         handle_exit_cmd(node);
     else

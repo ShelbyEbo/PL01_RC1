@@ -69,10 +69,6 @@ typedef struct node
     int pred_tcp;
     int succ_tcp;
 
-    int succ_fd;
-    int pred_fd;
-    int temp_fd;
-
     int joined;
 
     /* Configuração local e do servidor de arranque (Bootstrap) */
