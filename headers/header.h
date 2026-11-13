@@ -58,6 +58,15 @@ typedef struct boot_response
     int boot_tcp;
 } BootResponse;
 
+typedef struct ring_entry
+{
+    int ring_id;
+    int boot_node_id;
+    char boot_ip[16];
+    int boot_tcp;
+    struct ring_entry *next;
+} RingEntry;
+
 /* Identificadores do tipo de socket para receção de mensagens */
 # define FD_TYPE_PRED 1
 # define FD_TYPE_SUCC 2
