@@ -90,8 +90,8 @@ int handle_socket_message(Node *node, int fd_type);
 void run_event_loop(Node *node);
 
 /* Protótipos das funções de adesão aos nós */
-void    join_empty();
-void    join_existing();
+void    join_empty(Node *node, int ring_id, int node_id);
+void    join_existing(BootResponse resp, int node_id);
 
 /* Protótipos das funções de saída dos nós */
 void leave_alone(Node *node);
