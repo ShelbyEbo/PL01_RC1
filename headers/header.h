@@ -123,6 +123,7 @@ int  handle_socket_message(Node *node, int fd_type);
 void conn_init(Conn *c);
 void conn_close(Conn *c);
 void conn_drain(Node *node, Conn *c, int fd_type);
+void conn_process_buffer(Node *node, Conn *c, int fd_type);
 int  send_line(int fd, const char *fmt, ...);
 int  tcp_connect(const char *ip, int port);
 int  read_line_timeout(int fd, char *out, size_t len, int seconds);

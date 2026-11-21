@@ -6,8 +6,6 @@ static Conn *connection_for_type(Node *node, int fd_type)
         return (&node->pred);
     if (fd_type == FD_TYPE_SUCC)
         return (&node->succ);
-    if (fd_type == FD_TYPE_TEMP)
-        return (&node->temp[0]);
     return (NULL);
 }
 
@@ -199,6 +197,7 @@ int handle_new_connection(Node *node)
     struct sockaddr_in client_addr;
     socklen_t          client_len;
     int                fd;
+    int                i;
 
     if (!node || node->server_fd < 0)
         return (-1);
@@ -206,13 +205,18 @@ int handle_new_connection(Node *node)
     fd = accept(node->server_fd, (struct sockaddr *)&client_addr, &client_len);
     if (fd < 0)
         return (-1);
-    if (node->temp[0].fd >= 0)
+    for (i = 0; i < MAX_TEMP; i++)
     {
-        pending_drop_fd(node, node->temp[0].fd);
-        conn_close(&node->temp[0]);
+        if (node->temp[i].fd < 0)
+        {
+            conn_init(&node->temp[i]);
+            node->temp[i].fd = fd;
+            return (fd);
+        }
     }
-    node->temp[0].fd = fd;
-    return (fd);
+    fprintf(stderr, "Aviso: demasiadas ligações pendentes, ligação recusada.\n");
+    close(fd);
+    return (-1);
 }
 
 static void drop_connection(Node *node, Conn *c, int fd_type)
@@ -252,24 +256,19 @@ static int dispatch_line(Node *node, Conn *c, int fd_type, char *line)
     return (-1);
 }
 
-void conn_drain(Node *node, Conn *c, int fd_type)
+/**
+ * @brief Processa as linhas completas que já estão no buffer da sessão,
+ *        sem ler mais nada do socket (nunca bloqueia).
+ */
+void conn_process_buffer(Node *node, Conn *c, int fd_type)
 {
     char    line[BUFFER_SIZE];
     char   *newline;
-    ssize_t n;
     size_t  consumed;
     int     result;
 
     if (!node || !c || c->fd < 0)
         return ;
-    n = recv(c->fd, c->buf + c->len, sizeof(c->buf) - c->len - 1, 0);
-    if (n <= 0)
-    {
-        drop_connection(node, c, fd_type);
-        return ;
-    }
-    c->len += (size_t)n;
-    c->buf[c->len] = '\0';
     while ((newline = strchr(c->buf, '\n')) != NULL)
     {
         consumed = (size_t)(newline - c->buf) + 1;
@@ -294,6 +293,29 @@ void conn_drain(Node *node, Conn *c, int fd_type)
         if (c->fd < 0)
             return ;
     }
+    if (c->len + 1 >= sizeof(c->buf))
+        drop_connection(node, c, fd_type);   /* linha demasiado longa */
+}
+
+/**
+ * @brief Lê o que chegou ao socket (select disse que há dados) e processa
+ *        as linhas completas.
+ */
+void conn_drain(Node *node, Conn *c, int fd_type)
+{
+    ssize_t n;
+
+    if (!node || !c || c->fd < 0)
+        return ;
+    n = recv(c->fd, c->buf + c->len, sizeof(c->buf) - c->len - 1, 0);
+    if (n <= 0)
+    {
+        drop_connection(node, c, fd_type);
+        return ;
+    }
+    c->len += (size_t)n;
+    c->buf[c->len] = '\0';
+    conn_process_buffer(node, c, fd_type);
 }
 
 int handle_socket_message(Node *node, int fd_type)
@@ -321,6 +343,7 @@ void run_event_loop(Node *node)
     fd_set readfds;
     int    max_fd;
     int    ret;
+    int    i;
 
     while (1)
     {
@@ -330,7 +353,8 @@ void run_event_loop(Node *node)
         add_fd(&readfds, &max_fd, node->server_fd);
         add_fd(&readfds, &max_fd, node->pred.fd);
         add_fd(&readfds, &max_fd, node->succ.fd);
-        add_fd(&readfds, &max_fd, node->temp[0].fd);
+        for (i = 0; i < MAX_TEMP; i++)
+            add_fd(&readfds, &max_fd, node->temp[i].fd);
         ret = select(max_fd + 1, &readfds, NULL, NULL, NULL);
         if (ret < 0)
         {
@@ -352,7 +376,10 @@ void run_event_loop(Node *node)
             handle_socket_message(node, FD_TYPE_PRED);
         if (node->succ.fd >= 0 && FD_ISSET(node->succ.fd, &readfds))
             handle_socket_message(node, FD_TYPE_SUCC);
-        if (node->temp[0].fd >= 0 && FD_ISSET(node->temp[0].fd, &readfds))
-            handle_socket_message(node, FD_TYPE_TEMP);
+        for (i = 0; i < MAX_TEMP; i++)
+        {
+            if (node->temp[i].fd >= 0 && FD_ISSET(node->temp[i].fd, &readfds))
+                conn_drain(node, &node->temp[i], FD_TYPE_TEMP);
+        }
     }
 }

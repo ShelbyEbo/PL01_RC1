@@ -38,6 +38,9 @@ int main(int argc, char **argv)
 {
     Node node;
 
+    /* Escrever para um vizinho que fechou a sessão não pode matar o processo:
+     * o erro passa a ser devolvido por send() (EPIPE) e tratado. */
+    signal(SIGPIPE, SIG_IGN);
     init_node_defaults(&node);
     if (parse_args(argc, argv, &node) < 0)
         return (EXIT_FAILURE);

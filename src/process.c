@@ -3,8 +3,13 @@
 static void handle_join_cmd(Node *node, char *command)
 {
     char cmd[20];
+    char succ_ip[16];
+    char extra[2];
     int ring_id;
     int node_id;
+    int succ_id;
+    int succ_tcp;
+    int n;
     BootResponse resp;
 
     if (node->joined)
@@ -12,9 +17,22 @@ static void handle_join_cmd(Node *node, char *command)
         printf("Erro: O nó já pertence ao anel %d.\n", node->ring_id);
         return ;
     }
-    if (sscanf(command, "%19s %d %d", cmd, &ring_id, &node_id) != 3)
+    n = sscanf(command, "%19s %d %d %d %15s %d %1s", cmd, &ring_id, &node_id,
+            &succ_id, succ_ip, &succ_tcp, extra);
+    if (n != 3 && n != 6)
     {
-        printf("Uso: join <ring_id> <node_id>\n");
+        printf("Uso: join <ring_id> <node_id> [succ_id succ_ip succ_tcp]\n");
+        return ;
+    }
+    if (ring_id < 0 || !valid_id(node_id))
+    {
+        printf("Erro: anel deve ser >= 0 e identificador entre 0 e %d.\n",
+            RING_SIZE - 1);
+        return ;
+    }
+    if (n == 6)
+    {
+        join_direct(node, ring_id, node_id, succ_id, succ_ip, succ_tcp);
         return ;
     }
     if (bootstrap_query(node, ring_id, &resp) < 0)
@@ -62,8 +80,8 @@ static void handle_leave_cmd(Node *node)
 
 static void handle_exit_cmd(Node *node)
 {
-    if (node->joined && node->is_boot && node->pred_id == node->node_id)
-        bootstrap_unregister(node, node->ring_id);
+    if (node->joined)
+        handle_leave_cmd(node);
     close_tcp_server(node);
     exit(0);
 }

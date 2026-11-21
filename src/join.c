@@ -157,7 +157,7 @@ int handle_new(Node *node, Conn *c, int fd_type, int j, const char *ip, int port
         node->succ_ip[sizeof(node->succ_ip) - 1] = '\0';
         node->succ_tcp = port;
         printf("Novo nó %d (%s:%d) é agora o meu predecessor e sucessor.\n", j, ip, port);
-        conn_drain(node, &node->pred, FD_TYPE_PRED);
+        conn_process_buffer(node, &node->pred, FD_TYPE_PRED);
         return (0);
     }
 
@@ -174,7 +174,7 @@ int handle_new(Node *node, Conn *c, int fd_type, int j, const char *ip, int port
     node->pred_ip[sizeof(node->pred_ip) - 1] = '\0';
     node->pred_tcp = port;
     printf("Novo predecessor: %d (%s:%d).\n", j, ip, port);
-    conn_drain(node, &node->pred, FD_TYPE_PRED);
+    conn_process_buffer(node, &node->pred, FD_TYPE_PRED);
     return (0);
 }
 
